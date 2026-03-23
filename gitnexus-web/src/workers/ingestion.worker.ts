@@ -259,7 +259,9 @@ const workerApi = {
         console.log('📁 Stored', storedFileContents.size, 'files for grep/read tools');
       }
     } catch (err) {
-      console.warn('LadybugDB load failed (non-fatal, continuing without it):', err);
+      if (import.meta.env.DEV) {
+        console.warn('LadybugDB load failed (non-fatal, continuing without it):', err);
+      }
       // Still build BM25 index even if LadybugDB fails
       buildBM25Index(fileMap);
     }

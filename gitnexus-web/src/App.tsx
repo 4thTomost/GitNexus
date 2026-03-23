@@ -218,8 +218,8 @@ const AppContent = () => {
         setProgress({ phase: 'extracting', percent: 97, message: 'Processing...', detail: 'Extracting file contents' });
       }
     }).then(async (result) => {
-      // Run connect and repo list in parallel (avoid waterfall)
       await handleServerConnect(result);
+      setProgress(null);
       setServerBaseUrl(baseUrl);
       fetchRepos(baseUrl)
         .then((repos) => setAvailableRepos(repos))
@@ -258,6 +258,7 @@ const AppContent = () => {
         onGitClone={handleGitClone}
         onServerConnect={async (result, serverUrl) => {
           await handleServerConnect(result);
+          setProgress(null);
           if (serverUrl) {
             const baseUrl = normalizeServerUrl(serverUrl);
             setServerBaseUrl(baseUrl);
