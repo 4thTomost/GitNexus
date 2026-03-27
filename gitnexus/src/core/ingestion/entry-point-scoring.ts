@@ -225,6 +225,19 @@ export const ENTRY_POINT_PATTERNS = {
     /^runApp$/,           // App entry point
     /^onEvent$/,          // BLoC event handler
     /^mapEventToState$/,  // Legacy BLoC pattern
+    // Layered architecture patterns
+    /^load[A-Z]/,         // Service.loadItems(), data loading entry points
+    /^save[A-Z]?/,        // Persistence/mutation entry points
+    /^fetch[A-Z]?/,       // Data fetching entry points
+    /^delete[A-Z]/,       // Deletion mutation entry points
+    /^create[A-Z]/,       // Factory/creation entry points
+    /^update[A-Z]/,       // Update mutation entry points
+    /ViewModel$/,         // ViewModel classes
+    /Repository$/,        // Repository classes
+    /Service$/,           // Service classes
+    /^attempt$/,          // Error handling wrapper function
+    /^interceptRequest$/,  // HTTP interceptor request hook
+    /^interceptResponse$/, // HTTP interceptor response hook
   ],
   [SupportedLanguages.Cobol]: [], // Standalone regex processor — no tree-sitter entry points
 } satisfies Record<SupportedLanguages, RegExp[]>;
@@ -261,6 +274,12 @@ const UTILITY_PATTERNS: RegExp[] = [
   /Utils$/,
   /^utils?$/i,
   /^helpers?$/i,
+  // Dart/Flutter model serialization (data utilities, not entry points)
+  /^fromJson$/,
+  /^toJson$/,
+  /^copyWith$/,
+  /^toQuery$/,
+  /^looksLikeProblem$/,
 ];
 
 // ============================================================================

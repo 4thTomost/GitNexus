@@ -12,6 +12,7 @@
 
 import type { SyntaxNode } from '../utils/ast-helpers.js';
 import type { NodeLabel } from '../../graph/types.js';
+import type { CaptureMap } from '../language-provider.js';
 import { FUNCTION_NODE_TYPES, extractFunctionName } from '../utils/ast-helpers.js';
 import { SupportedLanguages } from '../../../config/supported-languages.js';
 import { defineLanguage } from '../language-provider.js';
@@ -39,6 +40,60 @@ const dartEnclosingFunctionFinder = (node: SyntaxNode): { funcName: string; labe
   return funcName ? { funcName, label } : null;
 };
 
+/**
+ * Extract semantic descriptions for Dart definitions that use architecture-specific
+ * patterns: GetIt DI registrations, attempt() error handling, cache strategies,
+ * REST API annotations, HTTP interceptors.
+ */
+const dartDescriptionExtractor = (
+  nodeLabel: NodeLabel,
+  nodeName: string,
+  captureMap: CaptureMap,
+): string | undefined => {
+  // Get the full definition text (first ~500 chars) for pattern matching
+  const defNode = captureMap['definition.method']
+    ?? captureMap['definition.function']
+    ?? captureMap['definition.class'];
+  const text = defNode?.text?.slice(0, 500);
+  if (!text) return undefined;
+
+  const descriptions: string[] = [];
+
+  // Detect GetIt DI registration patterns
+  const diMatch = text.match(/register(?:Singleton|LazySingleton|SingletonAsync)<(\w+)>/);
+  if (diMatch) {
+    descriptions.push(`DI: registers ${diMatch[1]}`);
+  }
+
+  // Detect attempt() error handling wrapper
+  if (text.includes('attempt(')) {
+    descriptions.push('Error-handled (attempt → Either<Failure, T>)');
+  }
+
+  // Detect cache strategy selection
+  const cacheMatch = text.match(/CacheStrategies\.(\w+)\(\)/);
+  if (cacheMatch) {
+    descriptions.push(`Cache strategy: ${cacheMatch[1]}`);
+  }
+
+  // Detect @RestApi annotation on class definitions
+  if (nodeLabel === 'Class' && text.includes('@RestApi')) {
+    descriptions.push('REST API interface (code-generated)');
+  }
+
+  // Detect HttpInterceptor implementation
+  if (nodeLabel === 'Class' && text.includes('HttpInterceptor')) {
+    descriptions.push('HTTP interceptor');
+  }
+
+  // Detect ValueNotifier reactive state
+  if (text.includes('ValueNotifier<')) {
+    descriptions.push('Reactive state (ValueNotifier)');
+  }
+
+  return descriptions.length > 0 ? descriptions.join('; ') : undefined;
+};
+
 const BUILT_INS: ReadonlySet<string> = new Set([
   'setState', 'mounted', 'debugPrint',
   'runApp', 'showDialog', 'showModalBottomSheet',
@@ -58,5 +113,6 @@ export const dartProvider = defineLanguage({
   importSemantics: 'wildcard',
   fieldExtractor: createFieldExtractor(dartFieldConfig),
   enclosingFunctionFinder: dartEnclosingFunctionFinder,
+  descriptionExtractor: dartDescriptionExtractor,
   builtInNames: BUILT_INS,
 });

@@ -39,6 +39,12 @@ export interface CSharpProjectConfig {
   projectDir: string;
 }
 
+/** Dart pubspec.yaml config */
+export interface PubspecConfig {
+  /** Package name from "name:" field in pubspec.yaml */
+  packageName: string;
+}
+
 /** Swift Package Manager module config */
 export interface SwiftPackageConfig {
   /** Map of target name -> source directory path (e.g., "SiuperModel" -> "Package/Sources/SiuperModel") */
@@ -218,6 +224,27 @@ export async function loadSwiftPackageConfig(repoRoot: string): Promise<SwiftPac
   return null;
 }
 
+/**
+ * Parse pubspec.yaml to extract the Dart package name.
+ * Used to distinguish local `package:` imports from external dependencies.
+ */
+export async function loadPubspecConfig(repoRoot: string): Promise<PubspecConfig | null> {
+  try {
+    const pubspecPath = path.join(repoRoot, 'pubspec.yaml');
+    const content = await fs.readFile(pubspecPath, 'utf-8');
+    const match = content.match(/^name:\s*(\S+)/m);
+    if (match) {
+      if (isDev) {
+        console.log(`📦 Loaded Dart package name: ${match[1]}`);
+      }
+      return { packageName: match[1] };
+    }
+  } catch {
+    // No pubspec.yaml
+  }
+  return null;
+}
+
 // ============================================================================
 // BUNDLED CONFIG LOADER
 // ============================================================================
@@ -230,5 +257,6 @@ export async function loadImportConfigs(repoRoot: string): Promise<ImportConfigs
     composerConfig: await loadComposerConfig(repoRoot),
     swiftPackageConfig: await loadSwiftPackageConfig(repoRoot),
     csharpConfigs: await loadCSharpProjectConfig(repoRoot),
+    pubspecConfig: await loadPubspecConfig(repoRoot),
   };
 }

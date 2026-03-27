@@ -19,11 +19,37 @@ export function resolveDartImport(
   // Skip dart: SDK imports (dart:async, dart:io, etc.)
   if (stripped.startsWith('dart:')) return null;
 
-  // Local package: imports → resolve to lib/<path>
+  // package: imports → resolve local packages via pubspec, skip external
   if (stripped.startsWith('package:')) {
     const slashIdx = stripped.indexOf('/');
     if (slashIdx === -1) return null;
+    const packageName = stripped.slice('package:'.length, slashIdx);
     const relPath = stripped.slice(slashIdx + 1);
+
+    // If pubspec is available, use it to discriminate local vs external packages
+    const pubspec = ctx.configs.pubspecConfig;
+    if (pubspec) {
+      if (packageName !== pubspec.packageName) {
+        // External package — skip (not in this repo)
+        return null;
+      }
+      // Local package — resolve to lib/<path>
+      const candidates = [`lib/${relPath}`, relPath];
+      const files: string[] = [];
+      for (const candidate of candidates) {
+        for (const fp of ctx.allFileList) {
+          if (fp.endsWith('/' + candidate) || fp === candidate) {
+            files.push(fp);
+            break;
+          }
+        }
+        if (files.length > 0) break;
+      }
+      if (files.length > 0) return { kind: 'files', files };
+      return null;
+    }
+
+    // Fallback: no pubspec — scan all files (original behavior)
     const candidates = [`lib/${relPath}`, relPath];
     const files: string[] = [];
     for (const candidate of candidates) {

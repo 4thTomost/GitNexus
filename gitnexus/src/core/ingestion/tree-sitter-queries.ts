@@ -1145,6 +1145,22 @@ export const DART_QUERIES = `
   superclass: (superclass
     (mixins
       (type_identifier) @heritage.trait))) @heritage
+
+; ── Annotations (@RestApi, @GET, @POST, @JsonSerializable, etc.) ────────────
+(annotation
+  name: (identifier) @decorator.name) @decorator
+
+; ── Annotations with scoped names (@http.GET, etc.) ─────────────────────────
+(annotation
+  name: (scoped_identifier) @decorator.name) @decorator
+
+; ── Part directives (part 'example_api.api.g.dart') ─────────────────────────
+(part_directive
+  (uri) @import.source) @import
+
+; ── Part-of directives (part of 'example_api.dart') ─────────────────────────
+(part_of_directive
+  (uri) @import.source) @import
 `;
 
 import { SupportedLanguages } from '../../config/supported-languages.js';
